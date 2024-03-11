@@ -1,0 +1,23 @@
+Flask
+psycopg2
+SQLAlchemy
+Flask-Login
+Flask-Migrate
+Flask-RESTful
+Flask-CORS
+Flask-WTF
+Flask_Sqlalchemy
+PyPDF2
+eventregistry
+
+# NLP Libraries
+spaCy
+Gensim
+nltk
+sumy
+
+# Development and Testing
+pytest
+pytest-cov
+Werkzeug
+PyPDF2

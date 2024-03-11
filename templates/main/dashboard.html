@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">
+            <img src="{{ url_for('static', filename='banner-dark.png') }}" width="auto" height="30" alt="Logo">
+        </a>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/logout">
+                    <i class="fa fa-sign-out" aria-hidden="true"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <section>
+        <div class="row" style="height: 90vh;">
+            <div class="col-xl-10 col-sm-6 col-6">
+                <h2 class="mx-2 my-2">Welcome, {{ current_user.username }}!</h2>
+                <div class="mt-3 mx-auto text-right">
+                    <button class="btn btn-outline-primary" id="refreshButton"><i
+                            class="fa fa-refresh"></i>&nbsp;Refresh</button>
+                </div>
+
+
+                <div class="modal fade" id="uploadConfirmationModal" tabindex="-1" role="dialog"
+                    aria-labelledby="uploadConfirmationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="uploadConfirmationModalLabel">Upload Confirmation</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" id="uploadConfirmationBody">
+                                <p>Selected files:</p>
+                                <ul id="selectedFilesList"></ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmUploadButton">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Choose News Source Modal -->
+                <div class="modal fade" id="chooseNewsSourceModal" tabindex="-1" role="dialog"
+                    aria-labelledby="chooseNewsSourceModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="chooseNewsSourceModalLabel">Choose Your News Source</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body modal-body-document">
+                                <div class="card-container d-flex flex-wrap">
+                                    <!-- News source cards will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Display News Article Modal -->
+                <div class="modal fade" id="displayNewsArticleModal" tabindex="-1" role="dialog"
+                    aria-labelledby="displayNewsArticleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="displayNewsArticleModalLabel">Article Title</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body modal-body-document">
+                                <!-- Display the date and full article text here -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-primary" id="addToDocumentsButton"><i
+                                        class="fa fa-plus"></i>&nbsp;Add to
+                                    Documents</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs" id="myTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="documents-tab" data-toggle="tab" href="#documents" role="tab"
+                            aria-controls="documents" aria-selected="true">Documents</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="summaries-tab" data-toggle="tab" href="#summaries" role="tab"
+                            aria-controls="summaries" aria-selected="false">Summaries</a>
+                    </li>
+                </ul>
+
+                <!-- Tab content -->
+                <div class="tab-content" id="myTabsContent">
+                    <div class="tab-pane fade show active" id="documents" role="tabpanel"
+                        aria-labelledby="documents-tab">
+                        <div class="d-flex flex-row flex-wrap mt-4" id="document-container">
+                            <!-- Add cards here!!! -->
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="summaries" role="tabpanel" aria-labelledby="summaries-tab">
+                        <div class="d-flex flex-row flex-wrap mt-4" id="summarization-container">
+                            <!-- Add more cards as needed -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-sm-6 col-6 bg-light" id="user-menu">
+                <div class="form-group mt-4 mx-2">
+                    <div class="custom-file mb-3">
+                        <input type="file" class="custom-file-input" id="fileInput" multiple>
+                        <label class="custom-file-label" for="fileInput">Choose files</label>
+                    </div>
+
+                    <!-- Upload Document from Link Form -->
+                    <div class="mt-3">
+                        <label for="documentLink">Upload Document from Link</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="documentLink"
+                                placeholder="Paste the document link">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" id="uploadLinkButton">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-1 mb-5">
+                        <label for="documentTitle">Document Title (Auto-detected):</label>
+                        <input type="text" class="form-control" id="documentTitle" readonly>
+                    </div>
+
+                    <!-- Import News from Source Button -->
+                    <div class="mt-3 mb-5">
+                        <p>Import news from souce:</p>
+                        <button class="btn btn-outline-primary" id="importNewsButton">Import News&nbsp; <i
+                                class="fa fa-newspaper-o"></i>&nbsp;<i class="fa fa-download"></i></button>
+                    </div>
+
+                    <div class="mt-5">
+                        <label for="summarization-method">Select Summarization Method</label>
+                        <select class="form-control" id="summarization-method" disabled>
+                            <option value="spacy">SpaCy</option>
+                            <option value="nltk">NLTK</option>
+                            <option value="sumy">Sumy</option>
+                            <!-- Add more options as needed -->
+                        </select>
+                    </div>
+
+                </div>
+
+                <button id="summarize-button" class="btn btn-primary mx-2" disabled>Summarize</button>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    <script>
+        const documentContainer = document.getElementById("document-container");
+        const summariesContainer = document.getElementById("summarization-container");
+        const selectSummarizeButton = document.getElementById("summarize-button");
+        const summarizationMethodSelect = document.getElementById("summarization-method");
+
+        const cards = documentContainer.getElementsByClassName("card");
+        const selectedCards = new Set();
+
+        const fileInput = document.getElementById("fileInput");
+        const uploadConfirmationModal = document.getElementById("uploadConfirmationModal");
+        const selectedFilesList = document.getElementById("selectedFilesList");
+        const confirmUploadButton = document.getElementById("confirmUploadButton");
+        const uploadConfirmationBody = document.getElementById("uploadConfirmationBody");
+
+        const refreshButton = document.getElementById("refreshButton");
+
+        // Function to display a toast message using jQuery
+        function showToast(message) {
+            const toastHtml = '<div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000" style="position: fixed; top: 10px; left: 40%;">\
+                    <div class="toast-header">\
+                        <strong class="mr-auto">Notification</strong>\
+                        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">\
+                            <span aria-hidden="true">&times;</span>\
+                        </button>\
+                    </div>\
+                    <div class="toast-body px-5 mt-2 mb-2">' + message + '</div>\
+                </div>';
+
+            $(toastHtml).appendTo('body').toast('show');
+        }
+
+        function clearDocumentContainer() {
+            const documentContainerLoc = document.getElementById("document-container");
+            documentContainerLoc.innerHTML = "";
+        }
+
+        function clearSummaryContainer() {
+            const summaryContainerLoc = document.getElementById("summarization-container");
+            summaryContainerLoc.innerHTML = "";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const viewSummaryButtons = document.querySelectorAll(".view-summary-button");
+
+            viewSummaryButtons.forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    const summaryID = button.getAttribute("data-summary-id");
+                });
+            });
+        });
+
+
+        refreshButton.addEventListener("click", () => {
+            clearSummaryContainer();
+            clearDocumentContainer();
+            fetchAndDisplayDocuments();
+        });
+
+
+        function showDocumentInModal(title, content) {
+            const documentModal = document.getElementById("documentModal");
+            const modalTitle = documentModal.querySelector(".modal-title");
+            const modalBody = documentModal.querySelector(".modal-body");
+
+            modalTitle.textContent = title;
+            modalBody.textContent = content;
+
+            $(documentModal).modal("show");
+        }
+
+        // Add a change event listener to handle file selection from the file input
+        fileInput.addEventListener("change", (event) => {
+            const files = event.target.files;
+            selectedFilesList.innerHTML = "";
+
+            for (let i = 0; i < files.length; i++) {
+                const li = document.createElement("li");
+                li.textContent = files[i].name;
+                selectedFilesList.appendChild(li);
+            }
+
+            // Show the confirmation modal
+            $(uploadConfirmationModal).modal("show");
+        });
+
+        // Add a click event listener to confirm the upload
+        confirmUploadButton.addEventListener("click", () => {
+            const formData = new FormData();
+            const files = fileInput.files;
+
+            for (let i = 0; i < files.length; i++) {
+                // Use the file name as the title
+                const title = files[i].name;
+                formData.append(`title${i}`, title);
+
+                // Append the content with a unique key (e.g., "content0", "content1", etc.)
+                formData.append(`content${i}`, files[i]);
+            }
+
+            fetch('/upload-document', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("File upload failed");
+                    }
+                })
+                .then(data => {
+                    showToast("Upload successful!")
+                    clearDocumentContainer();
+                    clearSummaryContainer();
+                    fetchAndDisplayDocuments();
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            $(uploadConfirmationModal).modal("hide");
+        });
+
+        function deleteDocument(documentId) {
+            // Make a DELETE request to your server's delete document route
+            fetch(`/delete-document/${documentId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Document deletion failed");
+                    }
+                })
+                .then(data => {
+                    showToast("Document deleted successfully!");
+                    const card = document.getElementById(`document-card-${documentId}`);
+                    if (card) {
+                        card.remove();
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        function deleteSummary(summaryId) {
+            // Make a DELETE request to your server's delete document route
+            fetch(`/delete-summary/${summaryId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Document deletion failed");
+                    }
+                })
+                .then(data => {
+                    showToast("Document deleted successfully!");
+                    const card = document.getElementById(`document-card-${summaryId}`);
+                    if (card) {
+                        card.remove();
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        function generateDocumentCard(documentName, dateUploaded, documentId, username) {
+            // Create a new card element
+            const card = document.createElement('div');
+            card.className = 'card m-2 custom-card';
+            card.id = `document-card-${documentId}`;
+            card.style = 'max-width: 350px; min-width: 350px; max-height: 250px;';
+
+            // Card body
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body';
+
+            // Custom checkbox
+            const customControl = document.createElement('div');
+            customControl.className = 'custom-control custom-checkbox';
+            customControl.style = 'text-align: end;';
+            customControl.innerHTML = `
+        <input type="checkbox" class="custom-control-input checkbox-on-card" id="customCheck-${documentId}">
+        <label class="custom-control-label" for="customCheck-${documentId}"></label>
+    `;
+
+            // Card title
+            const cardTitle = document.createElement('h5');
+            cardTitle.className = 'card-title';
+            cardTitle.style = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            cardTitle.textContent = documentName;
+
+            // Date uploaded
+            const dateUploadedText = document.createElement('p');
+            dateUploadedText.className = 'card-text';
+            dateUploadedText.textContent = `Date Uploaded: ${dateUploaded}`;
+
+            // Uploaded by:
+            const documentOwner = document.createElement('p');
+            documentOwner.className = 'card-text';
+            documentOwner.textContent = `Uploaded by: ${username}`;
+
+            // View Document button
+            const viewDocumentButton = document.createElement('button');
+            viewDocumentButton.className = 'btn btn-outline-primary view-document';
+            viewDocumentButton.innerHTML = `<i class="fa fa-eye"></i>&nbsp;View Document`;
+            viewDocumentButton.dataset.documentId = documentId;
+
+            // Delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'btn btn-outline-danger delete-document mx-2';
+            deleteButton.innerHTML = `<i class="fa fa-trash"></i>&nbsp;Delete`;
+            deleteButton.dataset.documentId = documentId;
+            deleteButton.addEventListener("click", (event) => {
+                const documentId = event.target.dataset.documentId;
+                deleteDocument(documentId);
+                clearDocumentContainer();
+                clearSummaryContainer();
+                fetchAndDisplayDocuments();
+            });
+
+            // Append elements to the card
+            cardBody.appendChild(customControl);
+            cardBody.appendChild(cardTitle);
+            cardBody.appendChild(dateUploadedText);
+            cardBody.appendChild(documentOwner)
+            cardBody.appendChild(viewDocumentButton);
+            cardBody.appendChild(deleteButton);
+
+            card.appendChild(cardBody);
+
+            const container = document.getElementById('document-container');
+            container.appendChild(card);
+        }
+
+        function generateSummaryCard(summary, method, summaryId) {
+            // Create a new card element
+            const card = document.createElement('div');
+            card.className = 'card m-2 custom-card';
+            card.id = `document-card-${summaryId}`;
+            card.style = 'max-width: 350px; min-width: 350px; max-height: 250px;';
+
+            // Card body
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body';
+
+            // Custom checkbox
+            const customControl = document.createElement('div');
+            customControl.className = 'custom-control custom-checkbox';
+            customControl.style = 'text-align: end;';
+            customControl.innerHTML = `
+        <input type="checkbox" class="custom-control-input checkbox-on-card" id="customCheck-${summaryId}">
+        <label class="custom-control-label" for="customCheck-${summaryId}"></label>
+    `;
+
+            // Card title
+            const cardTitle = document.createElement('h5');
+            cardTitle.className = 'card-title';
+            cardTitle.style = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            cardTitle.textContent = `${method} + summary`;
+
+            // Summary by method:
+            const methodCard = document.createElement('p');
+            methodCard.className = 'card-text';
+            methodCard.textContent = `Method used: ${method}`;
+
+            // View Document button
+            const viewDocumentButton = document.createElement('button');
+            viewDocumentButton.className = 'btn btn-outline-info view-summary-button';
+            viewDocumentButton.innerHTML = `<i class="fa fa-eye"></i>&nbsp;View Summmary`;
+            viewDocumentButton.dataset.summaryId = summaryId;
+
+            // Delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'btn btn-outline-danger delete-document mx-2';
+            deleteButton.innerHTML = `<i class="fa fa-trash"></i>&nbsp;Delete`;
+            deleteButton.dataset.summaryId = summaryId;
+            deleteButton.addEventListener("click", (event) => {
+                const summaryId = event.target.dataset.summaryId;
+                deleteSummary(summaryId);
+                clearSummaryContainer();
+                clearDocumentContainer();
+                fetchAndDisplayDocuments();
+            });
+
+            // Append elements to the card
+            cardBody.appendChild(cardTitle);
+            cardBody.appendChild(methodCard);
+            cardBody.appendChild(viewDocumentButton);
+            cardBody.appendChild(deleteButton);
+
+            card.appendChild(cardBody);
+
+            const container = document.getElementById('summarization-container');
+            container.appendChild(card);
+        }
+
+        selectSummarizeButton.addEventListener("click", () => {
+            // Check if at least one document is selected
+            if (selectedCards.size === 0) {
+                showToast("Please select at least one document to summarize.");
+                return;
+            }
+
+            // Get the summarization method selected by the user
+            const selectedMethod = summarizationMethodSelect.value;
+
+            // Collect selected document content and send it to the server for summarization
+            const selectedDocumentContent = [];
+            const fetchPromises = [];
+
+            for (const card of selectedCards) {
+                const documentId = card.querySelector('.view-document').dataset.documentId;
+                const fetchPromise = fetch(`/get-document-content/${documentId}`)
+                    .then((response) => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            throw new Error("Failed to fetch document content");
+                        }
+                    })
+                    .then((content) => {
+                        selectedDocumentContent.push(content);
+                    })
+                    .catch((error) => {
+                        console.error("Error fetching document content: " + error);
+                    });
+
+                fetchPromises.push(fetchPromise);
+            }
+
+            // Use Promise.all to wait for all fetch requests to complete
+            Promise.all(fetchPromises)
+                .then(() => {
+                    if (selectedDocumentContent.length === selectedCards.size) {
+                        // Send the content for summarization to the server
+                        fetch('/summarize', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                documents: selectedDocumentContent,
+                                summarization_method: selectedMethod,
+                            }),
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                generateSummaryCard(data.generated_summary, selectedMethod, data.summary_id);
+                            })
+                            .then(() => {
+                                showToast("Summarization successful! Method: " + selectedMethod)
+                                // Clear the selected cards set
+                                selectedCards.clear();
+                                if (selectedCards.size > 0) {
+                                    selectSummarizeButton.disabled = false;
+                                    summarizationMethodSelect.disabled = false;
+                                } else {
+                                    selectSummarizeButton.disabled = true;
+                                    summarizationMethodSelect.disabled = true;
+                                }
+                            })
+                            .then(() => {
+                                // Call these functions after the response is received
+                                clearSummaryContainer();
+                                clearDocumentContainer();
+                                fetchAndDisplayDocuments();
+                            })
+                            .catch(error => {
+                                console.error("Error summarizing documents: " + error);
+                            });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching document content: " + error);
+                });
+        });
+
+
+        // Function to fetch documents from the API and add document cards
+        function fetchAndDisplayDocuments() {
+            fetch("/get-all-documents")
+                .then((response) => response.json())
+                .then((documents) => {
+                    const documentContainer = document.getElementById("document-container");
+
+                    documents.forEach((document) => {
+                        generateDocumentCard(document.name, document.dateUploaded, document.id, document.user); //Add content later
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error fetching documents: " + error);
+                });
+
+            fetch("/get-all-summaries")
+                .then((response) => response.json())
+                .then((summaries) => {
+                    const summariesContainer = document.getElementById("summarization-container");
+
+                    summaries.forEach((summary) => {
+                        generateSummaryCard(summary.generated_summary, summary.method, summary.summary_id);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error fetching documents: " + error);
+                });
+
+            // Add a 500ms delay before attaching the event listeners
+            setTimeout(() => {
+                reinitializeAll();
+            }, 500);
+
+        }
+
+        function reinitializeAll() {
+            const viewDocumentButtons = documentContainer.querySelectorAll(".view-document");
+            const viewSummaryButtons = summariesContainer.querySelectorAll(".view-summary-button");
+
+
+            viewDocumentButtons.forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    const card = button.closest(".card");
+                    const documentName = card.querySelector(".card-title").textContent;
+                    const documentId = button.dataset.documentId;
+
+                    fetch(`/get-document-content/${documentId}`)
+                        .then((response) => {
+                            if (response.ok) {
+                                return response.text();
+                            } else {
+                                throw new Error("Failed to fetch document content");
+                            }
+                        })
+                        .then((content) => {
+                            showDocumentInModal(documentName, content);
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching document content: " + error);
+                        });
+                });
+            });
+
+            viewSummaryButtons.forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    const card = button.closest(".card");
+                    const summaryName = card.querySelector(".card-title").textContent;
+                    const summaryId = button.dataset.summaryId;
+
+                    fetch(`/get-summary-content/${summaryId}`)
+                        .then((response) => {
+                            if (response.ok) {
+                                return response.text();
+                            } else {
+                                throw new Error("Failed to fetch summary content");
+                            }
+                        })
+                        .then((content) => {
+                            showDocumentInModal(summaryName, content);
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching summary content: " + error);
+                        });
+                });
+            });
+
+            const cards = documentContainer.getElementsByClassName("card");
+            for (const card of cards) {
+                const checkbox = card.querySelector("input[type='checkbox']");
+
+                checkbox.addEventListener("click", (event) => {
+                    toggleSelection(card, checkbox);
+                });
+            }
+
+            function toggleSelection(card, checkbox) {
+                card.classList.toggle("selected");
+                checkbox.checked = card.classList.contains("selected");
+
+                // Add or remove the card from the set of selected cards
+                if (card.classList.contains("selected")) {
+                    selectedCards.add(card);
+                } else {
+                    selectedCards.delete(card);
+                }
+
+                // Enable or disable the options based on the selected card count
+                if (selectedCards.size > 0) {
+                    selectSummarizeButton.disabled = false;
+                    summarizationMethodSelect.disabled = false;
+                } else {
+                    selectSummarizeButton.disabled = true;
+                    summarizationMethodSelect.disabled = true;
+                }
+            }
+        }
+
+        const uploadLinkButton = document.getElementById("uploadLinkButton");
+        const documentLinkInput = document.getElementById("documentLink");
+        const documentTitleInput = document.getElementById("documentTitle");
+
+        documentLinkInput.addEventListener("input", () => {
+            const link = documentLinkInput.value;
+            const extractedTitle = extractTitleFromLink(link);
+            documentTitleInput.value = extractedTitle;
+        });
+
+        function extractTitleFromLink(link) {
+            const url = new URL(link);
+            const pathnameParts = url.pathname.split('/');
+            const title = pathnameParts[pathnameParts.length - 1];
+            return title;
+        }
+
+        uploadLinkButton.addEventListener("click", () => {
+            const link = documentLinkInput.value;
+            const title = documentTitleInput.value;
+
+
+            if (link.trim() === "") {
+                showToast("Please enter a document link.");
+                return;
+            }
+
+            fetch('/upload-document-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ link: link, title: title }),
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Link upload failed");
+                    }
+                })
+                .then(data => {
+                    showToast("Upload successful!");
+                    clearDocumentContainer();
+                    clearSummaryContainer();
+                    fetchAndDisplayDocuments();
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+
+        const chooseNewsSourceModal = new bootstrap.Modal(document.getElementById("chooseNewsSourceModal"));
+        const displayNewsArticleModal = new bootstrap.Modal(document.getElementById("displayNewsArticleModal"));
+
+        document.getElementById("importNewsButton").addEventListener("click", () => {
+            chooseNewsSourceModal.show();
+        });
+
+        function selectNewsSource(source) {
+            const selectedSource = source;
+
+            fetch(`/get-news/${selectedSource}`)
+                .then(response => response.json())
+                .then(articleData => {
+                    if (articleData) {
+                        const { title, date, description } = articleData;
+
+                        document.getElementById("displayNewsArticleModalLabel").textContent = `${title} - ${date}`;
+                        document.querySelector("#displayNewsArticleModal .modal-body").innerHTML = `<p>${description}</p>`;
+                    } else {
+                        // Handle the case where no article data is available
+                        document.getElementById("displayNewsArticleModalLabel").textContent = "No Article Available";
+                        document.querySelector("#displayNewsArticleModal .modal-body").innerHTML = "Sorry, no article is available for this source.";
+                    }
+                    displayNewsArticleModal.show();
+                    document.getElementById("addToDocumentsButton").addEventListener("click", () => {
+                        addNewsToDocuments(articleData.title, articleData.description);
+                        displayNewsArticleModal.hide()
+                        clearDocumentContainer()
+                        clearSummaryContainer()
+                        fetchAndDisplayDocuments()
+                    });
+
+                })
+                .catch(error => {
+                    console.error("Error fetching article data:", error);
+                });
+        }
+
+        function addNewsToDocuments(title, description) {
+            // Make an HTTP POST request to add the article as a document
+            fetch("/upload-document-news", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: title, // Use the article title
+                    content: description, // Use the article description as content
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    showToast("News article added.")
+                })
+                .catch(error => {
+                    console.error("Error adding the article to documents:", error);
+                });
+        }
+
+        function createNewsSourceCard(title, imgSrc, source) {
+            const cardContainer = document.createElement("div");
+            cardContainer.className = "col-6 col-md-4 col-lg-3 mb-4";
+
+            const card = document.createElement("a");
+            card.className = "card news-source-card";
+            card.dataset.source = source;
+            card.href = "#";
+            card.style.maxWidth = "250px";
+            card.style.minWidth = "250px";
+
+            const image = document.createElement("img");
+            image.className = "card-img-top";
+            image.src = imgSrc;
+            image.alt = title;
+
+
+            const cardBody = document.createElement("div");
+            cardBody.className = "card-body";
+
+            const cardTitle = document.createElement("h5");
+            cardTitle.className = "card-title";
+            cardTitle.textContent = title;
+
+            cardBody.appendChild(cardTitle);
+            card.appendChild(image);
+            card.appendChild(cardBody);
+            cardContainer.appendChild(card);
+
+            card.style.transition = "box-shadow 0.3s";
+            card.addEventListener("mouseover", () => {
+                card.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.2)";
+            });
+            card.addEventListener("mouseout", () => {
+                card.style.boxShadow = "none";
+            });
+
+            card.addEventListener("click", () => {
+                selectNewsSource(card.dataset.source);
+                chooseNewsSourceModal.hide();
+            });
+
+            return cardContainer;
+        }
+
+        const newsSources = [
+            { title: "The Wall Street Journal", imgSrc: "{{ url_for('static', filename='wsj.png') }}", value: "wsj.com" },
+            { title: "The BBC", imgSrc: "{{ url_for('static', filename='bbc.png') }}", value: "bbc.com" },
+            { title: "Europa Press", imgSrc: "{{ url_for('static', filename='europapress.png') }}", value: "europarl.europa.eu" },
+            { title: "The Daily Mail UK", imgSrc: "{{ url_for('static', filename='dailymail.png') }}", value: "dailymail.co.uk" },
+            { title: "USA Today", imgSrc: "{{ url_for('static', filename='usatoday.png') }}", value: "usatoday.com" },
+            { title: "The European Comission", imgSrc: "{{ url_for('static', filename='eceuropa.png') }}", value: "ec.europa.eu" },
+            { title: "Al Jazeera", imgSrc: "{{ url_for('static', filename='aljazeera.png') }}", value: "aljazeera.com" },
+            { title: "BBC News 24", imgSrc: "{{ url_for('static', filename='bbc24.png') }}", value: "news.bbc.co.uk" },
+            { title: "The Daily Wire", imgSrc: "{{ url_for('static', filename='dailywire.png') }}", value: "dailywire.com" },
+            { title: "Paradigm", imgSrc: "{{ url_for('static', filename='paradigm.png') }}", value: "wallstreetdaily.com" },
+            { title: "Yahoo News", imgSrc: "{{ url_for('static', filename='yahoo.png') }}", value: "news.yahoo.com" },
+            // Add more news sources as needed
+        ];
+
+        const cardContainer = document.querySelector(".card-container");
+        newsSources.forEach(source => {
+            const newsSourceCard = createNewsSourceCard(source.title, source.imgSrc, source.value);
+            cardContainer.appendChild(newsSourceCard);
+        });
+
+        // Call the function to fetch and display documents when the page loads
+        window.onload = fetchAndDisplayDocuments;
+
+    </script>
+</body>
+
+<div class="modal fade" id="documentModal" tabindex="-1" role="dialog" aria-labelledby="documentModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentModalLabel">Document Title / Summary Title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-body-document">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        overflow-x: hidden;
+    }
+
+    .modal-body-document {
+        min-height: 60vh;
+        max-height: 80vh;
+        /* Adjust the max height as needed */
+        overflow-y: auto;
+    }
+</style>
+
+</html>
